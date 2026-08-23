@@ -38,7 +38,7 @@ jobs:
             build-essential gcc g++ make autoconf automake libtool \
             bison flex zlib1g-dev gawk libncurses5-dev libncurses-dev \
             bzip2 subversion unzip wget patch perl python3 fakeroot \
-            yui-compressor quilt
+            yui-compressor quilt pkg-config
 
       - name: Clone XW SDK source
         run: git clone --depth 1 https://github.com/blinkstar88/SDK_XW.v5.6.3.git sdk-xw
@@ -89,7 +89,7 @@ jobs:
             build-essential gcc g++ make autoconf automake libtool \
             bison flex zlib1g-dev gawk libncurses5-dev libncurses-dev \
             bzip2 subversion unzip wget patch perl python3 fakeroot \
-            yui-compressor quilt
+            yui-compressor quilt pkg-config
 
       - name: Clone XM SDK source
         run: git clone --depth 1 https://github.com/zioproto/SDK.UBNT.v5.3.3.git sdk-xm
