@@ -1,0 +1,12 @@
+diff -urN uClibc.old/extra/config/Makefile.kconfig uClibc.sasman/extra/config/Makefile.kconfig
+--- uClibc.old/extra/config/Makefile.kconfig	2009-01-01 00:00:00.000000000 +0000
++++ uClibc.sasman/extra/config/Makefile.kconfig	2026-08-23 00:00:00.000000000 +0300
+@@ -148,6 +148,8 @@
+ ifeq ($(KBUILD_HAVE_NLS),no)
+ HOSTCFLAGS	+= -DKBUILD_NO_NLS
+ endif
++
++HOSTCFLAGS	+= -fgnu89-inline -fcommon
+ 
+ # generated files seem to need this to find local include files
+ HOSTCFLAGS_lex.zconf.o	:= -I$(src)

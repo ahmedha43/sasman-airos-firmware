@@ -1,0 +1,12 @@
+--- linux-2.6.15-5.2/Makefile.orig	2006-03-19 00:00:00.000000000 +0000
++++ linux-2.6.15-5.2/Makefile	2026-08-23 00:00:00.000000000 +0300
+@@ -449,7 +449,8 @@
+ include $(srctree)/arch/$(ARCH)/Makefile
+ export KBUILD_DEFCONFIG
+ 
+-config %config: scripts_basic outputmakefile FORCE
++config: scripts_basic outputmakefile FORCE
++%config: scripts_basic outputmakefile FORCE
+ 	$(Q)mkdir -p include/linux
+ 	$(Q)$(MAKE) $(build)=scripts/kconfig $@
+ else
