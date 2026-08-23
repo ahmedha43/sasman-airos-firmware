@@ -43,9 +43,9 @@ jobs:
       - name: Clone XW SDK source
         run: git clone --depth 1 https://github.com/blinkstar88/SDK_XW.v5.6.3.git sdk-xw
 
-      - name: Apply SASMAN XW patch
+      - name: Apply SASMAN XW overlay and config
         run: |
-          git -C sdk-xw apply --binary "$GITHUB_WORKSPACE/patches/sasman-xw.patch"
+          cp -a overlay/xw/. sdk-xw/
           cp ci/config.xw sdk-xw/.config
           cd sdk-xw
           make FORCE=1 defconfig
@@ -94,9 +94,9 @@ jobs:
       - name: Clone XM SDK source
         run: git clone --depth 1 https://github.com/zioproto/SDK.UBNT.v5.3.3.git sdk-xm
 
-      - name: Apply SASMAN XM patch and config
+      - name: Apply SASMAN XM overlay and config
         run: |
-          git -C sdk-xm apply --binary "$GITHUB_WORKSPACE/patches/sasman-xm.patch"
+          cp -a overlay/xm/. sdk-xm/
           cp ci/config.xm sdk-xm/.config
           cd sdk-xm
           make FORCE=1 defconfig

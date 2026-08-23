@@ -8,10 +8,10 @@
 
 | المنصة | مصدر SDK المستخدم في البناء | ملف التعديل |
 | --- | --- | --- |
-| XW | `blinkstar88/SDK_XW.v5.6.3` | `patches/sasman-xw.patch` |
-| XM | `zioproto/SDK.UBNT.v5.3.3` | `patches/sasman-xm.patch` |
+| XW | `blinkstar88/SDK_XW.v5.6.3` | `overlay/xw/` |
+| XM | `zioproto/SDK.UBNT.v5.3.3` | `overlay/xm/` |
 
-المصادر أعلاه مستودعات عامة خارجية. حقوق وتراخيص مكونات SDK تبقى لأصحابها، وهذا المستودع ينشر تعديلات SASMAN وسير البناء فقط.
+المصادر أعلاه مستودعات عامة خارجية. حقوق وتراخيص مكونات SDK تبقى لأصحابها، وهذا المستودع ينشر ملفات overlay الخاصة بـ SASMAN وسير البناء فقط؛ ولا يعيد توزيع شجرة SDK الكاملة.
 
 ## تشغيل البناء
 
@@ -31,8 +31,8 @@ git push origin v1.0.0
 | المسار | الوظيفة |
 | --- | --- |
 | `.github/workflows/build-firmware.yml` | سير البناء الكامل والنشر إلى Releases |
-| `patches/sasman-xw.patch` | تعديلات SASMAN على SDK XW، بما فيها الشعار وإصلاح non-PIE |
-| `patches/sasman-xm.patch` | تعديلات SASMAN على SDK XM، بما فيها الشعار وإصلاح non-PIE |
+| `overlay/xw/` | ملفات SASMAN التي تُنسخ مباشرة إلى SDK XW، بما فيها الشعار وإصلاح non-PIE |
+| `overlay/xm/` | ملفات SASMAN التي تُنسخ مباشرة إلى SDK XM، بما فيها الشعار وإصلاح non-PIE |
 | `ci/config.xw` | إعداد target غير تفاعلي لمنصة XW |
 | `ci/config.xm` | إعداد target XM المأخوذ من إعداد SDK المتوافق |
 
