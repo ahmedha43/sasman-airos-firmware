@@ -1,8 +1,19 @@
-diff -urN squashfs4.old/squashfs-tools/mksquashfs.c squashfs4.dev/squashfs-tools/mksquashfs.c
---- squashfs4.old/squashfs-tools/mksquashfs.c	2009-04-05 21:22:48.000000000 +0000
-+++ squashfs4.dev/squashfs-tools/mksquashfs.c	2026-08-23 00:00:00.000000000 +0300
-@@ -30,6 +30,7 @@
- #include <unistd.h>
+diff -urN squashfs4.post-lzma/squashfs-tools/Makefile squashfs4.sasman/squashfs-tools/Makefile
+--- squashfs4.post-lzma/squashfs-tools/Makefile	2026-08-23 11:23:20.081690690 +0000
++++ squashfs4.sasman/squashfs-tools/Makefile	2026-08-23 11:24:12.349406926 +0000
+@@ -18,7 +18,7 @@
+ 	unsquash-4.o swap.o compressor.o gzip_wrapper.o
+ 
+ CFLAGS = $(INCLUDEDIR) -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE \
+-	-D_GNU_SOURCE -DCOMP_DEFAULT=\"$(COMP_DEFAULT)\" -O2 -Wall
++	-D_GNU_SOURCE -DCOMP_DEFAULT=\"$(COMP_DEFAULT)\" -O2 -Wall -fgnu89-inline
+ 
+ ifdef LZMA_SUPPORT
+ LZMA_OBJS = $(LZMA_DIR)/C/Alloc.o $(LZMA_DIR)/C/LzFind.o \
+diff -urN squashfs4.post-lzma/squashfs-tools/mksquashfs.c squashfs4.sasman/squashfs-tools/mksquashfs.c
+--- squashfs4.post-lzma/squashfs-tools/mksquashfs.c	2026-08-23 11:23:20.081690690 +0000
++++ squashfs4.sasman/squashfs-tools/mksquashfs.c	2026-08-23 11:24:37.697268050 +0000
+@@ -31,6 +31,7 @@
  #include <stdio.h>
  #include <sys/time.h>
  #include <sys/types.h>
@@ -10,12 +21,11 @@ diff -urN squashfs4.old/squashfs-tools/mksquashfs.c squashfs4.dev/squashfs-tools
  #include <sys/stat.h>
  #include <fcntl.h>
  #include <errno.h>
-diff -urN squashfs4.old/squashfs-tools/unsquashfs.c squashfs4.dev/squashfs-tools/unsquashfs.c
---- squashfs4.old/squashfs-tools/unsquashfs.c	2009-04-05 21:23:06.000000000 +0000
-+++ squashfs4.dev/squashfs-tools/unsquashfs.c	2026-08-23 00:00:00.000000000 +0300
-@@ -21,7 +21,8 @@
- * unsquashfs.c
- */
+diff -urN squashfs4.post-lzma/squashfs-tools/unsquashfs.c squashfs4.sasman/squashfs-tools/unsquashfs.c
+--- squashfs4.post-lzma/squashfs-tools/unsquashfs.c	2026-08-23 11:23:20.081690690 +0000
++++ squashfs4.sasman/squashfs-tools/unsquashfs.c	2026-08-23 11:24:45.421225597 +0000
+@@ -22,6 +22,7 @@
+  */
  
  #include "unsquashfs.h"
 +#include <sys/sysmacros.h>
