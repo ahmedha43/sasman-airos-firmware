@@ -10,3 +10,16 @@ diff -urN uClibc.old/extra/config/Makefile.kconfig uClibc.sasman/extra/config/Ma
  
  # generated files seem to need this to find local include files
  HOSTCFLAGS_lex.zconf.o	:= -I$(src)
+diff -urN uClibc.old/extra/config/zconf.hash.c_shipped uClibc.sasman/extra/config/zconf.hash.c_shipped
+--- uClibc.old/extra/config/zconf.hash.c_shipped	2009-01-01 00:00:00.000000000 +0000
++++ uClibc.sasman/extra/config/zconf.hash.c_shipped	2026-08-23 00:00:00.000000000 +0300
+@@ -160,7 +160,7 @@
+   };
+ #define kconf_id_strings ((const char *) &kconf_id_strings_contents)
+ #ifdef __GNUC__
+-__inline
++/* Keep an external definition for modern GCC linkers. */
+ #endif
+ struct kconf_id *
+ kconf_id_lookup (register const char *str, register unsigned int len)
+
