@@ -50,7 +50,7 @@ define Build/Compile
 endef
 
 define Build/Install
-	$(MAKE) -C $(PKG_BUILD_DIR) install
+		$(MAKE) -C $(PKG_BUILD_DIR) MAKEINFO=true install
 endef
 
 $(eval $(call HostBuild))
