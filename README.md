@@ -34,7 +34,9 @@ git push origin v2.0.0-official
 | `assets/sasman_logo.png` | نسخة مضغوطة من شعار SASMAN مناسبة لحجم فلاش XM/XW |
 | `docs/official-sources.md` | روابط firmware الرسمية والبصمات المثبتة |
 | `reference/original/xm-v6.3.24/usr/www/` | webroot الأصلي المستخرج من firmware XM، للقراءة والمقارنة فقط |
-| `reference/original/xm-v6.3.24/README.md` | توثيق مصدر الواجهة الأصلية وطريقة استخدامها |
+| `reference/original/xm-v6.3.24/README.md` | توثيق مصدر واجهة XM الأصلية وطريقة استخدامها |
+| `reference/original/xw-v6.3.24/usr/www/` | webroot الأصلي المستخرج من firmware XW، للقراءة والمقارنة فقط |
+| `reference/original/xw-v6.3.24/README.md` | توثيق مصدر واجهة XW الأصلية وطريقة استخدامها |
 | `overlay/xm/` و`overlay/xw/` | المسار القديم المبني على SDK، محفوظ للمقارنة ولا يستخدمه workflow الرسمي الحالي |
 
 ## قيد التوقيع والتحذير
