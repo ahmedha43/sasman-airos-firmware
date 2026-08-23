@@ -1,12 +1,12 @@
-name: Build SASMAN airOS firmware
+name: Build SASMAN official-based firmware
 
 on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Release version, for example v1.0.0'
+        description: 'Release tag, for example v2.0.0-official'
         required: true
-        default: 'v1.0.0'
+        default: 'v2.0.0-official'
         type: string
   push:
     tags:
@@ -15,158 +15,156 @@ on:
 permissions:
   contents: write
 
+env:
+  XM_URL: https://dl.ui.com/firmwares/XN-fw/v6.3.24/XM.v6.3.24.33508.251204.1904.bin
+  XM_SHA256: 3c4cbf7928954fb27d4d85747a70b5af73232175ffa2225ddba5531a0474f1da
+  XW_URL: https://dl.ui.com/firmwares/XW-fw/v6.3.24/XW.v6.3.24.33508.251204.1816.bin
+  XW_SHA256: 90457c55c3daae3ebf1fb034dcfd56151316d6d6f464fc21c8fef48ed063fa53
+
 concurrency:
-  group: sasman-firmware-${{ github.ref }}
+  group: sasman-official-firmware-${{ github.ref }}
   cancel-in-progress: false
 
-env:
-  FORCE_UNSAFE_CONFIG: '1'
-
 jobs:
-  build-xw:
-    name: Build XW firmware
+  build:
+    name: Build official-based ${{ matrix.platform }} firmware
     runs-on: ubuntu-22.04
-    timeout-minutes: 360
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: XM
+            board: UBNTXM
+            source_url: https://dl.ui.com/firmwares/XN-fw/v6.3.24/XM.v6.3.24.33508.251204.1904.bin
+            source_sha256: 3c4cbf7928954fb27d4d85747a70b5af73232175ffa2225ddba5531a0474f1da
+            source_name: XM.v6.3.24.33508.251204.1904.bin
+          - platform: XW
+            board: UBNTXW
+            source_url: https://dl.ui.com/firmwares/XW-fw/v6.3.24/XW.v6.3.24.33508.251204.1816.bin
+            source_sha256: 90457c55c3daae3ebf1fb034dcfd56151316d6d6f464fc21c8fef48ed063fa53
+            source_name: XW.v6.3.24.33508.251204.1816.bin
+
     steps:
-      - name: Checkout SASMAN build project
+      - name: Checkout SASMAN project
         uses: actions/checkout@v4
 
-      - name: Install legacy SDK host dependencies
+      - name: Install image tools
         run: |
           sudo apt-get update
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
-            build-essential gcc g++ make autoconf automake libtool \
-            bison flex zlib1g-dev gawk libncurses5-dev libncurses-dev \
-            bzip2 subversion unzip wget patch perl python3 fakeroot \
-            yui-compressor quilt pkg-config
+            ca-certificates curl python3 squashfs-tools
 
-      - name: Clone XW SDK source
-        run: git clone --depth 1 https://github.com/blinkstar88/SDK_XW.v5.6.3.git sdk-xw
-
-      - name: Apply SASMAN XW overlay and config
+      - name: Download and verify official firmware
+        env:
+          SOURCE_URL: ${{ matrix.source_url }}
+          SOURCE_SHA256: ${{ matrix.source_sha256 }}
+          SOURCE_NAME: ${{ matrix.source_name }}
         run: |
-          cp -a overlay/xw/. sdk-xw/
-          cp ci/config.xw sdk-xw/.config
-          cd sdk-xw
-          make FORCE=1 defconfig
+          set -euo pipefail
+          mkdir -p input
+          curl --fail --location --retry 3 --connect-timeout 20 --max-time 180 \
+            "$SOURCE_URL" -o "input/$SOURCE_NAME"
+          printf '%s  %s\n' "$SOURCE_SHA256" "input/$SOURCE_NAME" | sha256sum --check --status
+          printf 'verified_sha256=%s\n' "$SOURCE_SHA256"
+          file "input/$SOURCE_NAME"
 
-      - name: Build complete XW firmware
+      - name: Unpack official rootfs
+        env:
+          SOURCE_NAME: ${{ matrix.source_name }}
+          BOARD: ${{ matrix.board }}
         run: |
-          cd sdk-xw
-          make PROFILE=ubntxn FORCE=1 V=99 -j1
+          set -euo pipefail
+          mkdir -p work
+          python3 tools/official/ubnt_image.py unpack \
+            "input/$SOURCE_NAME" work --board "$BOARD"
+          mkdir -p work/rootfs
+          unsquashfs -d work/rootfs work/rootfs.squashfs
 
-      - name: Collect XW firmware
+      - name: Apply SASMAN presentation layer
         run: |
-          set -e
+          set -euo pipefail
+          python3 tools/official/rebrand_web.py \
+            work/rootfs/usr/www \
+            assets/sasman_logo.png \
+            tools/official/sasman_official.css
+          test -f work/rootfs/usr/www/images/sasman_logo.png
+          grep -q SASMAN work/rootfs/usr/www/login.cgi
+          grep -q SASMAN work/rootfs/usr/www/lib/head.tmpl
+
+      - name: Rebuild rootfs with official-compatible SquashFS settings
+        run: |
+          set -euo pipefail
+          mksquashfs work/rootfs work/rootfs-sasman.squashfs \
+            -comp lzma -b 131072 -noappend -all-root -no-xattrs
+          python3 tools/official/check_rootfs.py work/metadata.json work/rootfs-sasman.squashfs
+
+      - name: Repack and verify official-based image
+        env:
+          SOURCE_NAME: ${{ matrix.source_name }}
+          PLATFORM: ${{ matrix.platform }}
+        run: |
+          set -euo pipefail
           mkdir -p release-assets
-          find sdk-xw/bin -type f -name '*.bin' -size +1k -print -exec cp {} release-assets/ \;
-          test -n "$(find release-assets -type f -name '*.bin' -print -quit)"
-          (cd release-assets && sha256sum *.bin > SHA256SUMS-XW.txt)
-          ls -lh release-assets
-          tar -czf sasman-xw-build.tar.gz -C release-assets .
+          output="release-assets/SASMAN-${PLATFORM}-${SOURCE_NAME%.bin}-unsigned.bin"
+          python3 tools/official/ubnt_image.py repack \
+            "input/$SOURCE_NAME" work/rootfs-sasman.squashfs "$output"
+          python3 tools/official/ubnt_image.py verify "$output"
+          sha256sum "$output" > "release-assets/SHA256SUMS-${PLATFORM}.txt"
+          cat > "release-assets/BUILD-NOTICE-${PLATFORM}.txt" <<'NOTICE'
+          SASMAN official-based firmware build.
 
-      - name: Upload XW build artifact
+          The image preserves the official platform kernel/u-boot/EXEC payloads and replaces the web root with the SASMAN presentation layer.
+          Structural CRCs are recalculated. This image is not RSA-signed by Ubiquiti and must not be treated as an official signed image.
+          Confirm the device board exactly: XM images are only for XM; XW images are only for XW.
+          Keep an original recovery image and a verified TFTP recovery path before any test.
+          NOTICE
+          ls -lh release-assets
+
+      - name: Upload ${{ matrix.platform }} firmware artifact
         uses: actions/upload-artifact@v4
         with:
-          name: sasman-xw-firmware
-          path: |
-            release-assets/*
-            sasman-xw-build.tar.gz
+          name: sasman-${{ matrix.platform }}-official-firmware
+          path: release-assets/*
           if-no-files-found: error
-
-  build-xm:
-    name: Build XM firmware
-    runs-on: ubuntu-22.04
-    timeout-minutes: 360
-    steps:
-      - name: Checkout SASMAN build project
-        uses: actions/checkout@v4
-
-      - name: Install legacy SDK host dependencies
-        run: |
-          sudo apt-get update
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
-            build-essential gcc g++ make autoconf automake libtool \
-            bison flex zlib1g-dev gawk libncurses5-dev libncurses-dev \
-            bzip2 subversion unzip wget patch perl python3 fakeroot \
-            yui-compressor quilt pkg-config
-
-      - name: Clone XM SDK source
-        run: git clone --depth 1 https://github.com/zioproto/SDK.UBNT.v5.3.3.git sdk-xm
-
-      - name: Apply SASMAN XM overlay and config
-        run: |
-          cp -a overlay/xm/. sdk-xm/
-          cp ci/config.xm sdk-xm/.config
-          cd sdk-xm
-          make FORCE=1 defconfig
-
-      - name: Build complete XM firmware
-        run: |
-          cd sdk-xm
-          make FORCE=1 V=99 -j1
-
-      - name: Collect XM firmware
-        run: |
-          set -e
-          mkdir -p release-assets
-          find sdk-xm/bin -type f -name '*.bin' -size +1k -print -exec cp {} release-assets/ \;
-          test -n "$(find release-assets -type f -name '*.bin' -print -quit)"
-          (cd release-assets && sha256sum *.bin > SHA256SUMS-XM.txt)
-          ls -lh release-assets
-          tar -czf sasman-xm-build.tar.gz -C release-assets .
-
-      - name: Upload XM build artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: sasman-xm-firmware
-          path: |
-            release-assets/*
-            sasman-xm-build.tar.gz
-          if-no-files-found: error
+          retention-days: 30
 
   release:
-    name: Publish firmware release
-    needs: [build-xw, build-xm]
-    runs-on: ubuntu-22.04
+    name: Publish XM and XW BIN files
+    needs: build
     if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-22.04
     steps:
-      - name: Checkout SASMAN build project
-        uses: actions/checkout@v4
-
-      - name: Download XW build
+      - name: Download platform artifacts
         uses: actions/download-artifact@v4
         with:
-          name: sasman-xw-firmware
-          path: release/xw
+          pattern: sasman-*-official-firmware
+          path: release
+          merge-multiple: true
 
-      - name: Download XM build
-        uses: actions/download-artifact@v4
-        with:
-          name: sasman-xm-firmware
-          path: release/xm
-
-      - name: Set release tag
+      - name: Resolve release tag
         id: release-tag
         shell: bash
+        env:
+          DISPATCH_VERSION: ${{ inputs.version }}
         run: |
+          set -euo pipefail
           if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
-            echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+            tag="${GITHUB_REF#refs/tags/}"
           else
-            echo "tag=${{ inputs.version }}" >> "$GITHUB_OUTPUT"
+            tag="$DISPATCH_VERSION"
           fi
+          [[ "$tag" == v* ]] || { echo 'Release tag must start with v'; exit 1; }
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
 
-      - name: Create GitHub Release with BIN files
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.release-tag.outputs.tag }}
-          name: SASMAN Firmware ${{ steps.release-tag.outputs.tag }}
+          name: SASMAN official-based firmware ${{ steps.release-tag.outputs.tag }}
           generate_release_notes: true
           fail_on_unmatched_files: true
           files: |
-            release/xw/**/*.bin
-            release/xw/**/SHA256SUMS-XW.txt
-            release/xw/**/*.tar.gz
-            release/xm/**/*.bin
-            release/xm/**/SHA256SUMS-XM.txt
-            release/xm/**/*.tar.gz
+            release/**/*.bin
+            release/**/SHA256SUMS-*.txt
+            release/**/BUILD-NOTICE-*.txt

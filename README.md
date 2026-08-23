@@ -1,45 +1,46 @@
-# SASMAN airOS Firmware Builder
+# SASMAN airOS firmware
 
-مستودع عام لبناء نسخ firmware مخصصة من واجهة SASMAN لأجهزة Ubiquiti القديمة ذات منصتي **XM** و**XW**. المستودع لا يرفع نسخ SDK الكاملة؛ بل يحتفظ بتعديلات SASMAN وملفات الإعداد وسير البناء، ثم يقوم GitHub Actions بتنزيل مصدر SDK العام، تطبيق patch المناسب، وبناء الصورة الكاملة.
+مستودع عام لبناء نسخ firmware مخصصة بواجهة **SASMAN** لأجهزة Ubiquiti airMAX M ذات منصتي **XM** و**XW**. يعتمد المسار الحالي على firmware الرسمي الكامل لكل منصة، ثم يفك root filesystem الرسمي، يضيف طبقة الهوية البصرية SASMAN إلى واجهة airOS الأصلية، يعيد ضغط rootfs، ويعيد تغليف صورة firmware مع الحفاظ على kernel وu-boot وملفات EXEC الرسمية.
 
 ## ماذا ينتج المستودع؟
 
-عند تشغيل سير العمل بنجاح، ستظهر ملفات `.bin` الخاصة بـ XW وXM في صفحة **Releases**. كما تُرفق ملفات `SHA256SUMS-XW.txt` و`SHA256SUMS-XM.txt` للتحقق من سلامة التنزيل.
+عند نجاح GitHub Actions، ينشئ المشروع Release واحداً يحتوي على ملف BIN منفصل لمنصة XM وملف BIN منفصل لمنصة XW، إضافة إلى ملفات SHA256 وملف تحذير البناء لكل منصة. لا تستخدم صورة XM على XW أو صورة XW على XM.
 
-| المنصة | مصدر SDK المستخدم في البناء | ملف التعديل |
+| المنصة | مصدر firmware الرسمي | SHA256 المثبت في workflow |
 | --- | --- | --- |
-| XW | `blinkstar88/SDK_XW.v5.6.3` | `overlay/xw/` |
-| XM | `zioproto/SDK.UBNT.v5.3.3` | `overlay/xm/` |
-
-المصادر أعلاه مستودعات عامة خارجية. حقوق وتراخيص مكونات SDK تبقى لأصحابها، وهذا المستودع ينشر ملفات overlay الخاصة بـ SASMAN وسير البناء فقط؛ ولا يعيد توزيع شجرة SDK الكاملة.
+| XM | `https://dl.ui.com/firmwares/XN-fw/v6.3.24/XM.v6.3.24.33508.251204.1904.bin` | `3c4cbf7928954fb27d4d85747a70b5af73232175ffa2225ddba5531a0474f1da` |
+| XW | `https://dl.ui.com/firmwares/XW-fw/v6.3.24/XW.v6.3.24.33508.251204.1816.bin` | `90457c55c3daae3ebf1fb034dcfd56151316d6d6f464fc21c8fef48ed063fa53` |
 
 ## تشغيل البناء
 
-يمكن تشغيل البناء بطريقتين. الطريقة الأولى هي إنشاء tag جديد ودفعه إلى GitHub:
+يمكن تشغيل البناء من تبويب **Actions** باختيار **Build SASMAN official-based firmware** ثم الضغط على **Run workflow** وإدخال tag مثل `v2.0.0-official`. كما يبدأ البناء تلقائياً عند دفع tag يبدأ بالحرف `v`:
 
 ```bash
-git tag v1.0.0
-git push origin v1.0.0
+git tag v2.0.0-official
+git push origin v2.0.0-official
 ```
 
-الطريقة الثانية هي فتح تبويب **Actions**، اختيار **Build SASMAN airOS firmware**، الضغط على **Run workflow**، ثم إدخال رقم الإصدار مثل `v1.0.0`.
-
-سيبني workflow نسختي XM وXW بالتوازي على runners عامة، ثم ينشئ Release واحداً بعد نجاح المهمتين. مدة البناء قد تكون طويلة لأن SDK يبني النواة والأدوات وroot filesystem من الصفر.
+يبني workflow مهمتي XM وXW بالتوازي على Ubuntu 22.04. قبل التعديل يتحقق من SHA256 وboard marker، ثم يفك SquashFS الرسمي، يطبق الهوية، يعيد الضغط باستخدام LZMA وblock size `131072`، ويتحقق من CRC وحجم القسم قبل رفع الملفات إلى artifact ثم Release.
 
 ## الملفات المهمة
 
 | المسار | الوظيفة |
 | --- | --- |
-| `.github/workflows/build-firmware.yml` | سير البناء الكامل والنشر إلى Releases |
-| `overlay/xw/` | ملفات SASMAN التي تُنسخ مباشرة إلى SDK XW، بما فيها الشعار وإصلاح non-PIE |
-| `overlay/xm/` | ملفات SASMAN التي تُنسخ مباشرة إلى SDK XM، بما فيها الشعار وإصلاح non-PIE |
-| `ci/config.xw` | إعداد target غير تفاعلي لمنصة XW |
-| `ci/config.xm` | إعداد target XM المأخوذ من إعداد SDK المتوافق |
+| `.github/workflows/build-firmware.yml` | بناء XM وXW الرسميين بالتوازي ونشر BIN وSHA256 في Release |
+| `tools/official/ubnt_image.py` | فك rootfs وإعادة تغليف صورة UBNT والتحقق من CRC |
+| `tools/official/rebrand_web.py` | إضافة شعار SASMAN وتعديل الرأس وشاشة الدخول دون تغيير منطق CGI |
+| `tools/official/sasman_official.css` | طبقة الهوية البصرية الزرقاء الكهربائية/السماوية |
+| `tools/official/check_rootfs.py` | التأكد من أن rootfs المعدل يناسب partition allocation |
+| `assets/sasman_logo.png` | نسخة مضغوطة من شعار SASMAN مناسبة لحجم فلاش XM/XW |
+| `docs/official-sources.md` | روابط firmware الرسمية والبصمات المثبتة |
+| `overlay/xm/` و`overlay/xw/` | المسار القديم المبني على SDK، محفوظ للمقارنة ولا يستخدمه workflow الرسمي الحالي |
 
-## تحذير مهم
+## قيد التوقيع والتحذير
 
-لا ترفع firmware إلى جهاز فعلي قبل مطابقة نوع اللوحة والطراز. صورة XM ليست مناسبة لجهاز XW، والعكس صحيح. احتفظ دائماً بنسخة firmware الأصلية وخطة TFTP Recovery، واختبر أولاً على جهاز غير إنتاجي. نجاح GitHub Actions يعني أن الصورة بُنيت، ولا يعني أن كل طراز Ubiquiti ممكن سيقبلها.
+الملفات الناتجة من هذا المسار مبنية فوق firmware رسمي، لكنها **ليست موقعة RSA من Ubiquiti** بعد تعديل rootfs. إعادة حساب CRC البنيوي لا تعادل إعادة التوقيع الرسمي، ولذلك يجب اعتبارها صوراً تجريبية إلى أن يتم اختبار قبولها على جهاز XM أو XW مطابق فعلياً.
 
-## ملاحظات GitHub Actions
+لا ترفع أي ملف إلى جهاز إنتاجي قبل مطابقة نوع اللوحة والطراز، واحتفظ دائماً بنسخة firmware الأصلية ومسار TFTP Recovery فعال. اختبر أولاً على جهاز غير إنتاجي. نجاح GitHub Actions يعني أن الصورة اجتازت فحوص البناء والبنية، ولا يضمن أن bootloader أو updater سيقبل صورة غير موقعة.
 
-المستودع عام عمداً حتى يعمل البناء على runners العامة ولا يستهلك دقائق البناء المدفوعة للمستودعات الخاصة. لا تضع أي مفاتيح سرية أو بيانات دخول داخل المستودع أو ملفات workflow؛ هذا المشروع لا يحتاج إلى أسرار GitHub لأن المصدر وعمليات النشر تستخدم صلاحية `contents: write` الخاصة بسير العمل.
+## لماذا المستودع عام؟
+
+المستودع عام عمداً حتى يعمل البناء على GitHub-hosted runners العامة ولا يستهلك دقائق البناء المدفوعة للمستودعات الخاصة. لا يحتاج workflow إلى مفاتيح سرية؛ فهو يستخدم روابط التنزيل الرسمية وصلاحية `contents: write` المخصصة لإنشاء Release.
