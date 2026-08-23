@@ -1,0 +1,14 @@
+# Build output
+sdk-xm/
+sdk-xw/
+release/
+*.bin
+*.img
+*.tar.gz
+*.log
+
+# Local build state
+.tmp/
+tmp/
+staging_dir/
+build_dir/

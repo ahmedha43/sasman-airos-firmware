@@ -1,0 +1,172 @@
+name: Build SASMAN airOS firmware
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version, for example v1.0.0'
+        required: true
+        default: 'v1.0.0'
+        type: string
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sasman-firmware-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  FORCE_UNSAFE_CONFIG: '1'
+
+jobs:
+  build-xw:
+    name: Build XW firmware
+    runs-on: ubuntu-22.04
+    timeout-minutes: 360
+    steps:
+      - name: Checkout SASMAN build project
+        uses: actions/checkout@v4
+
+      - name: Install legacy SDK host dependencies
+        run: |
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
+            build-essential gcc g++ make autoconf automake libtool \
+            bison flex zlib1g-dev gawk libncurses5-dev libncurses-dev \
+            bzip2 subversion unzip wget patch perl python3 fakeroot \
+            yui-compressor
+
+      - name: Clone XW SDK source
+        run: git clone --depth 1 https://github.com/blinkstar88/SDK_XW.v5.6.3.git sdk-xw
+
+      - name: Apply SASMAN XW patch
+        run: |
+          git -C sdk-xw apply --binary "$GITHUB_WORKSPACE/patches/sasman-xw.patch"
+          cp ci/config.xw sdk-xw/.config
+          cd sdk-xw
+          make FORCE=1 defconfig
+
+      - name: Build complete XW firmware
+        run: |
+          cd sdk-xw
+          make FORCE=1 V=0 -j"$(nproc)"
+
+      - name: Collect XW firmware
+        run: |
+          set -e
+          mkdir -p release-assets
+          find sdk-xw/bin -type f -name '*.bin' -size +1k -print -exec cp {} release-assets/ \;
+          test -n "$(find release-assets -type f -name '*.bin' -print -quit)"
+          (cd release-assets && sha256sum *.bin > SHA256SUMS-XW.txt)
+          ls -lh release-assets
+          tar -czf sasman-xw-build.tar.gz -C release-assets .
+
+      - name: Upload XW build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sasman-xw-firmware
+          path: |
+            release-assets/*
+            sasman-xw-build.tar.gz
+          if-no-files-found: error
+
+  build-xm:
+    name: Build XM firmware
+    runs-on: ubuntu-22.04
+    timeout-minutes: 360
+    steps:
+      - name: Checkout SASMAN build project
+        uses: actions/checkout@v4
+
+      - name: Install legacy SDK host dependencies
+        run: |
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
+            build-essential gcc g++ make autoconf automake libtool \
+            bison flex zlib1g-dev gawk libncurses5-dev libncurses-dev \
+            bzip2 subversion unzip wget patch perl python3 fakeroot \
+            yui-compressor
+
+      - name: Clone XM SDK source
+        run: git clone --depth 1 https://github.com/zioproto/SDK.UBNT.v5.3.3.git sdk-xm
+
+      - name: Apply SASMAN XM patch and config
+        run: |
+          git -C sdk-xm apply --binary "$GITHUB_WORKSPACE/patches/sasman-xm.patch"
+          cp ci/config.xm sdk-xm/.config
+          cd sdk-xm
+          make FORCE=1 defconfig
+
+      - name: Build complete XM firmware
+        run: |
+          cd sdk-xm
+          make FORCE=1 V=0 -j"$(nproc)"
+
+      - name: Collect XM firmware
+        run: |
+          set -e
+          mkdir -p release-assets
+          find sdk-xm/bin -type f -name '*.bin' -size +1k -print -exec cp {} release-assets/ \;
+          test -n "$(find release-assets -type f -name '*.bin' -print -quit)"
+          (cd release-assets && sha256sum *.bin > SHA256SUMS-XM.txt)
+          ls -lh release-assets
+          tar -czf sasman-xm-build.tar.gz -C release-assets .
+
+      - name: Upload XM build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sasman-xm-firmware
+          path: |
+            release-assets/*
+            sasman-xm-build.tar.gz
+          if-no-files-found: error
+
+  release:
+    name: Publish firmware release
+    needs: [build-xw, build-xm]
+    runs-on: ubuntu-22.04
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+    steps:
+      - name: Checkout SASMAN build project
+        uses: actions/checkout@v4
+
+      - name: Download XW build
+        uses: actions/download-artifact@v4
+        with:
+          name: sasman-xw-firmware
+          path: release/xw
+
+      - name: Download XM build
+        uses: actions/download-artifact@v4
+        with:
+          name: sasman-xm-firmware
+          path: release/xm
+
+      - name: Set release tag
+        id: release-tag
+        shell: bash
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${{ inputs.version }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create GitHub Release with BIN files
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.release-tag.outputs.tag }}
+          name: SASMAN Firmware ${{ steps.release-tag.outputs.tag }}
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+          files: |
+            release/xw/**/*.bin
+            release/xw/**/SHA256SUMS-XW.txt
+            release/xw/**/*.tar.gz
+            release/xm/**/*.bin
+            release/xm/**/SHA256SUMS-XM.txt
+            release/xm/**/*.tar.gz
