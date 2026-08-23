@@ -1,0 +1,22 @@
+diff -urN squashfs.old/squashfs-tools/Makefile squashfs.dev/squashfs-tools/Makefile
+--- squashfs.old/squashfs-tools/Makefile	2006-03-15 21:36:20.000000000 +0000
++++ squashfs.dev/squashfs-tools/Makefile	2026-08-23 10:48:39.997453136 +0000
+@@ -1,6 +1,6 @@
+ INCLUDEDIR = .
+ 
+-CFLAGS := -I$(INCLUDEDIR) -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -O2
++CFLAGS := -I$(INCLUDEDIR) -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -O2 -fcommon
+ 
+ all: mksquashfs unsquashfs
+ 
+diff -urN squashfs.old/squashfs-tools/mksquashfs.c squashfs.dev/squashfs-tools/mksquashfs.c
+--- squashfs.old/squashfs-tools/mksquashfs.c	2006-03-15 21:36:20.000000000 +0000
++++ squashfs.dev/squashfs-tools/mksquashfs.c	2026-08-23 10:48:39.997453136 +0000
+@@ -30,6 +30,7 @@
+ #include <unistd.h>
+ #include <stdio.h>
+ #include <sys/types.h>
++#include <sys/sysmacros.h>
+ #include <sys/stat.h>
+ #include <fcntl.h>
+ #include <errno.h>
