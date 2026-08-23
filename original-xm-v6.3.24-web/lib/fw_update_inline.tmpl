@@ -1,0 +1,51 @@
+<div id="message">
+<script type="text/javascript" src="/251204.1902/js/jquery.utils.js"></script>
+<script type="text/javascript">
+$(document).ready(function() {
+	// Function to check if CurrentPassword field is empty and toggle button state
+	function toggleApplyButton() {
+		var currentPassword = $('#CurrentPassword').val();
+		if (currentPassword)
+		{
+			currentPassword = currentPassword.trim();
+		}
+		$('#btn_apply_password').prop('disabled', currentPassword === '');
+	}
+
+	// Initial check when page loads
+	toggleApplyButton();
+
+	// Check on input change
+	$('#CurrentPassword').on('input', toggleApplyButton);
+});
+</script>
+<div id="updatedMsgDiv" class="msg info-msg round-corner">
+	<table class="msg">
+		<tr>
+			<td id="msg_body"><? echo dict_translate("Uploaded Firmware Version"); >: <?echo $newfwversion>
+			<? if($firmware_third_party_warning) { echo "<br><span style=\"font-weight: bold\">" + $firmware_third_party_warning + "</span>"; } ?>
+			</td>
+			<td style="white-space: nowrap; text-align: right; width: 80px;">
+				<? if ($fw_downgrade_needs_current_password) { ?>
+				<form id="sys_update_form_old_passwd" enctype="multipart/form-data" action="system.cgi" method="POST">
+                    <input type="password" autocomplete="off" class="config" name="CurrentPassword" id="CurrentPassword" maxlength="63" realname="<? echo dict_translate("Current Password"); >"\>
+					<input type="submit" id="btn_apply_password" name="apply_password" value="<? echo dict_translate("Apply"); >">
+				<? } else { ?>
+				<form id="sys_update_form" enctype="multipart/form-data" action="fwflash.cgi" method="POST">
+					<input type="submit" id="btn_fwupdate" name="update" value="<? echo dict_translate("Update"); >">
+					<input type="hidden" id="CurrentPassword" name="CurrentPassword" value="<? echo $CurrentPassword; ?>" />
+				<? } ?>
+					<input type="hidden" name="token" value="<? echo $X_ACCESS_TOKEN; ?>" />
+				</form>
+			</td>
+			<td style="white-space: nowrap; text-align: right; width: 5%; padding-left: 0;">
+				<form id="sys_update__discard_form" enctype="multipart/form-data" action="system.cgi" method="POST">
+					<input type="hidden" name="token" value="<? echo $X_ACCESS_TOKEN; ?>" />
+					<input type="submit" id="discard" name="update_discard" value="<? echo dict_translate("Discard"); >">
+				</form>
+			</td>
+		</tr>
+	</table>
+</div>
+
+</div>
