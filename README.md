@@ -33,6 +33,8 @@ git push origin v2.0.0-official
 | `tools/official/check_rootfs.py` | التأكد من أن rootfs المعدل يناسب partition allocation |
 | `assets/sasman_logo.png` | نسخة مضغوطة من شعار SASMAN مناسبة لحجم فلاش XM/XW |
 | `docs/official-sources.md` | روابط firmware الرسمية والبصمات المثبتة |
+| `reference/original/xm-v6.3.24/usr/www/` | webroot الأصلي المستخرج من firmware XM، للقراءة والمقارنة فقط |
+| `reference/original/xm-v6.3.24/README.md` | توثيق مصدر الواجهة الأصلية وطريقة استخدامها |
 | `overlay/xm/` و`overlay/xw/` | المسار القديم المبني على SDK، محفوظ للمقارنة ولا يستخدمه workflow الرسمي الحالي |
 
 ## قيد التوقيع والتحذير
