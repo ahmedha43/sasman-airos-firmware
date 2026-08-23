@@ -78,7 +78,7 @@ jobs:
           mkdir -p work
           python3 tools/official/ubnt_image.py unpack \
             "input/$SOURCE_NAME" work --board "$BOARD"
-          mkdir -p work/rootfs
+          rm -rf work/rootfs
           unsquashfs -d work/rootfs work/rootfs.squashfs
 
       - name: Apply SASMAN presentation layer
