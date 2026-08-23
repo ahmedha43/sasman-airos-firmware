@@ -32,7 +32,7 @@ EXTRA_TARGET=$(if $(CONFIG_EXTRA_TARGET_ARCH),--enable-targets=$(call qstrip,$(C
 define Build/Configure
 	$(CP) $(SCRIPT_DIR)/config.{guess,sub} $(PKG_BUILD_DIR)/
 	(cd $(PKG_BUILD_DIR); \
-		CFLAGS="-O2 -fcommon" CXXFLAGS="-O2 -fcommon" CFLAGS_FOR_BUILD="-O2 -fcommon" ./configure \\
+			CFLAGS="-O2 -fcommon" CXXFLAGS="-O2 -fcommon" CFLAGS_FOR_BUILD="-O2 -fcommon" ./configure \
 		--prefix=$(STAGING_DIR_HOST) \
 		--build=$(GNU_HOST_NAME) \
 		--host=$(GNU_HOST_NAME) \
