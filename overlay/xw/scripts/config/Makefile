@@ -13,7 +13,7 @@
 # Platform specific fixes
 #
 # FreeBSD
-export CFLAGS+=-DKBUILD_NO_NLS -fno-pie
+export CFLAGS+=-DKBUILD_NO_NLS -O2 -fno-pie
 export LDFLAGS+=-no-pie
 
 conf-objs	:= conf.o zconf.tab.o
