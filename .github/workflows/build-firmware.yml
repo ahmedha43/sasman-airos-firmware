@@ -53,7 +53,7 @@ jobs:
       - name: Build complete XW firmware
         run: |
           cd sdk-xw
-          make PROFILE=ubntxn FORCE=1 V=0 -j"$(nproc)"
+          make PROFILE=ubntxn FORCE=1 V=99 -j1
 
       - name: Collect XW firmware
         run: |
@@ -104,7 +104,7 @@ jobs:
       - name: Build complete XM firmware
         run: |
           cd sdk-xm
-          make FORCE=1 V=0 -j"$(nproc)"
+          make FORCE=1 V=99 -j1
 
       - name: Collect XM firmware
         run: |
