@@ -1,6 +1,6 @@
 diff -urN squashfs.old/squashfs-tools/Makefile squashfs.dev/squashfs-tools/Makefile
 --- squashfs.old/squashfs-tools/Makefile	2006-03-15 21:36:20.000000000 +0000
-+++ squashfs.dev/squashfs-tools/Makefile	2026-08-23 10:48:39.997453136 +0000
++++ squashfs.dev/squashfs-tools/Makefile	2026-08-23 10:59:34.873674456 +0000
 @@ -1,6 +1,6 @@
  INCLUDEDIR = .
  
@@ -11,9 +11,20 @@ diff -urN squashfs.old/squashfs-tools/Makefile squashfs.dev/squashfs-tools/Makef
  
 diff -urN squashfs.old/squashfs-tools/mksquashfs.c squashfs.dev/squashfs-tools/mksquashfs.c
 --- squashfs.old/squashfs-tools/mksquashfs.c	2006-03-15 21:36:20.000000000 +0000
-+++ squashfs.dev/squashfs-tools/mksquashfs.c	2026-08-23 10:48:39.997453136 +0000
++++ squashfs.dev/squashfs-tools/mksquashfs.c	2026-08-23 10:59:34.869674479 +0000
 @@ -30,6 +30,7 @@
  #include <unistd.h>
+ #include <stdio.h>
+ #include <sys/types.h>
++#include <sys/sysmacros.h>
+ #include <sys/stat.h>
+ #include <fcntl.h>
+ #include <errno.h>
+diff -urN squashfs.old/squashfs-tools/unsquashfs.c squashfs.dev/squashfs-tools/unsquashfs.c
+--- squashfs.old/squashfs-tools/unsquashfs.c	2006-03-15 21:36:21.000000000 +0000
++++ squashfs.dev/squashfs-tools/unsquashfs.c	2026-08-23 10:59:34.873674456 +0000
+@@ -25,6 +25,7 @@
+ #define FALSE 0
  #include <stdio.h>
  #include <sys/types.h>
 +#include <sys/sysmacros.h>
